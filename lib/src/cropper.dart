@@ -76,6 +76,7 @@ class ImageCropper {
     int compressQuality = 90,
     AndroidUiSettings androidUiSettings,
     IOSUiSettings iosUiSettings,
+    bool showCropper = false,
   }) async {
     assert(sourcePath != null);
     assert(await File(sourcePath).exists());
@@ -99,7 +100,7 @@ class ImageCropper {
       ..addAll(iosUiSettings?.toMap() ?? {});
 
     final String resultPath =
-        await _channel.invokeMethod('cropImage', arguments);
+        await _channel.invokeMethod(showCropper ? 'showCropper' : 'cropImage', arguments);
     return resultPath == null ? null : new File(resultPath);
   }
 }

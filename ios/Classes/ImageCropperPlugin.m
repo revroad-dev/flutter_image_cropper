@@ -3,6 +3,7 @@
 #import <UIKit/UIKit.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 #import <Photos/Photos.h>
+#import "PBoxCropViewController.h"
 
 @interface FLTImageCropperPlugin() <TOCropViewControllerDelegate>
 @end
@@ -84,7 +85,40 @@
       }
       
       [_viewController presentViewController:cropViewController animated:YES completion:nil];
-  } else {
+  } else if ([@"showCropper" isEqualToString:call.method]) {
+      _result = result;
+      _arguments = call.arguments;
+      NSString *sourcePath = call.arguments[@"source_path"];
+      NSNumber *ratioX = call.arguments[@"ratio_x"];
+      NSNumber *ratioY = call.arguments[@"ratio_y"];
+      NSString *cropStyle = call.arguments[@"crop_style"];
+      NSArray *aspectRatioPresets = call.arguments[@"aspect_ratio_presets"];
+      NSNumber *compressQuality = call.arguments[@"compress_quality"];
+      NSString *compressFormat = call.arguments[@"compress_format"];
+      
+      UIImage *image = [UIImage imageWithContentsOfFile:sourcePath];
+      PBoxCropViewController *cropViewController = [[UIStoryboard storyboardWithName:@"PBoxCrop" bundle:nil] instantiateViewControllerWithIdentifier:@"PBoxCropViewController"];
+      //      UIStoryboard(storyboard: .pboxcrop).instantiateViewController(vc: GalleryViewController.self)
+      cropViewController.image = image;
+      cropViewController.plugin = self;
+      
+      UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:cropViewController];
+      navigationController.modalPresentationStyle = UIModalPresentationFullScreen;
+
+      if (compressQuality && [compressQuality isKindOfClass:[NSNumber class]]) {
+          _compressQuality = compressQuality.intValue * 1.0f / 100;
+      } else {
+          _compressQuality = 0.9f;
+      }
+      if (compressFormat && [compressFormat isKindOfClass:[NSString class]]) {
+          _compressFormat = compressFormat;
+      } else {
+          _compressFormat = @"jpg";
+      }
+      [_viewController presentViewController:navigationController animated:YES completion:nil];
+
+  }
+  else {
       result(FlutterMethodNotImplemented);
   }
 }
@@ -227,6 +261,13 @@
 - (void)cropViewController:(TOCropViewController *)cropViewController didFinishCancelled:(BOOL)cancelled {
     [cropViewController dismissViewControllerAnimated:YES completion:nil];
     _result(nil);
+    
+    _result = nil;
+    _arguments = nil;
+}
+
+- (void)deliverResult:(id)result {
+    _result(result);
     
     _result = nil;
     _arguments = nil;
